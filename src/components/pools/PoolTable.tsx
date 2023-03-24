@@ -60,7 +60,7 @@ const LinkWrapper = styled(Link)`
 
 const SORT_FIELD = {
   feeTier: 'feeTier',
-  feeUSD: 'feeUSD',
+  feeUSD: 'feesUSD',
   volumeUSD: 'volumeUSD',
   tvlUSD: 'tvlUSD',
   volumeUSDWeek: 'volumeUSDWeek',
@@ -102,6 +102,7 @@ const DataRow = ({ poolData, index }: { poolData: ProcessedPoolData; index: numb
 }
 
 const MAX_ITEMS = 50
+const MIN_VOLUMES = 50000
 
 export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDatas: PoolData[]; maxItems?: number }) {
   const [currentNetwork] = useActiveNetworkVersion()
@@ -123,7 +124,9 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
           .map((pool) => {
             return { ...pool, feesUSD: pool.volumeUSD * (pool.feeTier / 1000000) }
           })
-          .filter((x) => !!x && !POOL_HIDE[currentNetwork.id].includes(x.address))
+          .filter(
+            (pool) => !!pool && !POOL_HIDE[currentNetwork.id].includes(pool.address) && pool.volumeUSD >= MIN_VOLUMES
+          )
       : []
   }, [currentNetwork.id, poolDatas])
 

@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js'
 import React, { useCallback, useState, useMemo, useEffect } from 'react'
 import styled from 'styled-components'
 import { Link } from 'react-router-dom'
@@ -7,7 +8,7 @@ import Loader, { LoadingRows } from 'components/Loader'
 import { AutoColumn } from 'components/Column'
 import { RowFixed } from 'components/Row'
 import { formatDollarAmount } from 'utils/numbers'
-import { PoolData, ProcessedPoolData } from 'state/pools/reducer'
+import { PoolData, ProcessedPoolData, PoolDayData } from 'state/pools/reducer'
 import DoubleCurrencyLogo from 'components/DoubleLogo'
 import { feeTierPercent } from 'utils'
 import { Label, ClickableText } from 'components/Text'
@@ -15,6 +16,7 @@ import { PageButtons, Arrow, Break } from 'components/shared'
 import { POOL_HIDE } from '../../constants/index'
 import useTheme from 'hooks/useTheme'
 import { networkPrefix } from 'utils/networkPrefix'
+import { estimateFee, getTokensAmountFromDepositAmountUSD, getLiquidityDelta, getPriceFromTick } from 'utils/mathbn'
 import { useActiveNetworkVersion } from 'state/application/hooks'
 
 const Wrapper = styled(DarkGreyCard)`
@@ -26,7 +28,7 @@ const ResponsiveGrid = styled.div`
   grid-gap: 1em;
   align-items: center;
 
-  grid-template-columns: 20px 3.5fr repeat(4, 1fr);
+  grid-template-columns: 20px 3.5fr repeat(6, 1fr);
 
   @media screen and (max-width: 900px) {
     grid-template-columns: 20px 1.5fr repeat(2, 1fr);
@@ -59,8 +61,10 @@ const LinkWrapper = styled(Link)`
 `
 
 const SORT_FIELD = {
+  apr: 'apr',
   feeTier: 'feeTier',
-  feeUSD: 'feesUSD',
+  feesUSD: 'feesUSD',
+  feesEstimate24h: 'feesEstimate24h',
   volumeUSD: 'volumeUSD',
   tvlUSD: 'tvlUSD',
   volumeUSDWeek: 'volumeUSDWeek',
@@ -83,6 +87,12 @@ const DataRow = ({ poolData, index }: { poolData: ProcessedPoolData; index: numb
               {feeTierPercent(poolData.feeTier)}
             </GreyBadge>
           </RowFixed>
+        </Label>
+        <Label end={1} fontWeight={400}>
+          {`${poolData.apr.toFixed(2)} %`}
+        </Label>
+        <Label end={1} fontWeight={400}>
+          {formatDollarAmount(poolData.feesEstimate24h)}
         </Label>
         <Label end={1} fontWeight={400}>
           {formatDollarAmount(poolData.feesUSD)}
@@ -111,7 +121,7 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
   const theme = useTheme()
 
   // for sorting
-  const [sortField, setSortField] = useState(SORT_FIELD.feeUSD)
+  const [sortField, setSortField] = useState(SORT_FIELD.apr)
   const [sortDirection, setSortDirection] = useState<boolean>(true)
 
   // pagination
@@ -121,15 +131,56 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
   const processedPools: ProcessedPoolData[] = useMemo(() => {
     return poolDatas
       ? poolDatas
-          .map((pool) => {
-            return { ...pool, feesUSD: pool.volumeUSD * (pool.feeTier / 1000000) }
-          })
           .filter(
             (pool) => !!pool && !POOL_HIDE[currentNetwork.id].includes(pool.address) && pool.volumeUSD >= MIN_VOLUMES
           )
+          .map((pool) => {
+            const poolDayData7d = pool.poolDayData.slice(0, 7)
+            const poolDayData14d = pool.poolDayData
+            const priceVolatility24HPercentage: number =
+              poolDayData14d
+                .map((d: PoolDayData) => {
+                  return (100 * (Number(d.high) - Number(d.low))) / Number(d.high)
+                })
+                .reduce((a, b) => a + b, 0) / 14
+
+            const P = getPriceFromTick(Number(pool.tick), pool.token0.decimals, pool.token1.decimals)
+            const Pl = P - (P * priceVolatility24HPercentage) / 100
+            const Pu = P + (P * priceVolatility24HPercentage) / 100
+            const priceUSDX = Number(pool.token1?.tokenDayData ? pool.token1?.tokenDayData[0].priceUSD : 0)
+            const priceUSDY = Number(pool.token0?.tokenDayData ? pool.token0?.tokenDayData[0].priceUSD : 0)
+            const depositAmountUSD = 50000
+            const { amount0, amount1 } = getTokensAmountFromDepositAmountUSD(
+              P,
+              Pl,
+              Pu,
+              priceUSDX,
+              priceUSDY,
+              depositAmountUSD
+            )
+            const deltaL = getLiquidityDelta(
+              P,
+              Pl,
+              Pu,
+              amount0,
+              amount1,
+              Number(pool.token0?.decimals || 18),
+              Number(pool.token1?.decimals || 18)
+            )
+            const volume24h = Number(poolDayData7d[0].volumeUSD)
+            const L = new BigNumber(pool.liquidity)
+            const feesEstimate24h = P >= Pl && P <= Pu ? estimateFee(deltaL, L, volume24h, pool.feeTier) : 0
+            const apr = (feesEstimate24h * 365 * 100) / depositAmountUSD
+
+            return {
+              ...pool,
+              feesUSD: pool.volumeUSD * (pool.feeTier / 1000000),
+              feesEstimate24h: feesEstimate24h / 500,
+              apr,
+            }
+          })
       : []
   }, [currentNetwork.id, poolDatas])
-
   const sortedPools = useMemo(() => {
     return processedPools
       ? processedPools
@@ -182,8 +233,14 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
             <ClickableText color={theme.text2} onClick={() => handleSort(SORT_FIELD.feeTier)}>
               Pool {arrow(SORT_FIELD.feeTier)}
             </ClickableText>
-            <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feeUSD)}>
-              Fee 24H {arrow(SORT_FIELD.feeUSD)}
+            <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feesEstimate24h)}>
+              APR {arrow(SORT_FIELD.apr)}
+            </ClickableText>
+            <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feesEstimate24h)}>
+              (100$/24H) {arrow(SORT_FIELD.feesEstimate24h)}
+            </ClickableText>
+            <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feesUSD)}>
+              Fee 24H {arrow(SORT_FIELD.feesUSD)}
             </ClickableText>
             <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.tvlUSD)}>
               TVL {arrow(SORT_FIELD.tvlUSD)}

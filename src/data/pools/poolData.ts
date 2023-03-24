@@ -2,7 +2,7 @@ import { useQuery } from '@apollo/client'
 import gql from 'graphql-tag'
 import { useDeltaTimestamps } from 'utils/queries'
 import { useBlocksFromTimestamps } from 'hooks/useBlocksFromTimestamps'
-import { PoolData } from 'state/pools/reducer'
+import { PoolData, PoolDayData, TokenDayData } from 'state/pools/reducer'
 import { get2DayChange } from 'utils/data'
 import { formatTokenName, formatTokenSymbol } from 'utils/tokens'
 import { useActiveNetworkVersion, useClients } from 'state/application/hooks'
@@ -30,6 +30,9 @@ export const POOLS_BULK = (block: number | undefined, pools: string[]) => {
             name
             decimals
             derivedETH
+            tokenDayData(first: 1, orderBy: date, orderDirection: desc) {
+              priceUSD
+            }
         }
         token1 {
             id
@@ -37,6 +40,9 @@ export const POOLS_BULK = (block: number | undefined, pools: string[]) => {
             name
             decimals
             derivedETH
+            tokenDayData(first: 1, orderBy: date, orderDirection: desc) {
+              priceUSD
+            }
         }
         token0Price
         token1Price
@@ -47,6 +53,11 @@ export const POOLS_BULK = (block: number | undefined, pools: string[]) => {
         totalValueLockedToken0
         totalValueLockedToken1
         totalValueLockedUSD
+        poolDayData(first: 15, skip: 1, orderBy: date, orderDirection: desc) {
+          volumeUSD
+          high
+          low
+        }
       }
       bundles (where: {id: "1"}) {
         ethPriceUSD
@@ -70,6 +81,7 @@ interface PoolFields {
     name: string
     decimals: string
     derivedETH: string
+    tokenDayData?: TokenDayData[]
   }
   token1: {
     id: string
@@ -77,6 +89,7 @@ interface PoolFields {
     name: string
     decimals: string
     derivedETH: string
+    tokenDayData?: TokenDayData[]
   }
   token0Price: string
   token1Price: string
@@ -87,6 +100,7 @@ interface PoolFields {
   totalValueLockedToken0: string
   totalValueLockedToken1: string
   totalValueLockedUSD: string
+  poolDayData: PoolDayData[]
 }
 
 interface PoolDataResponse {
@@ -239,6 +253,7 @@ export function usePoolDatas(
           symbol: formatTokenSymbol(current.token0.id, current.token0.symbol, activeNetwork),
           decimals: parseInt(current.token0.decimals),
           derivedETH: parseFloat(current.token0.derivedETH),
+          tokenDayData: current.token0.tokenDayData,
         },
         token1: {
           address: current.token1.id,
@@ -246,7 +261,9 @@ export function usePoolDatas(
           symbol: formatTokenSymbol(current.token1.id, current.token1.symbol, activeNetwork),
           decimals: parseInt(current.token1.decimals),
           derivedETH: parseFloat(current.token1.derivedETH),
+          tokenDayData: current.token1.tokenDayData,
         },
+        poolDayData: current.poolDayData,
         token0Price: parseFloat(current.token0Price),
         token1Price: parseFloat(current.token1Price),
         volumeUSD,

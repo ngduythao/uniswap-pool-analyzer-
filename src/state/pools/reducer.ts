@@ -12,26 +12,26 @@ export interface Pool {
   token1: SerializedToken
 }
 
+export interface TokenDayData {
+  priceUSD: string
+}
+
+export interface Token {
+  name: string
+  symbol: string
+  address: string
+  decimals: number
+  derivedETH: number
+  tokenDayData?: TokenDayData[]
+}
+
 export interface PoolData {
   // basic token info
   address: string
   feeTier: number
 
-  token0: {
-    name: string
-    symbol: string
-    address: string
-    decimals: number
-    derivedETH: number
-  }
-
-  token1: {
-    name: string
-    symbol: string
-    address: string
-    decimals: number
-    derivedETH: number
-  }
+  token0: Token
+  token1: Token
 
   // for tick math
   liquidity: number
@@ -54,10 +54,20 @@ export interface PoolData {
   // token amounts
   tvlToken0: number
   tvlToken1: number
+
+  poolDayData: PoolDayData[]
+}
+
+export interface PoolDayData {
+  volumeUSD: number
+  high: number
+  low: number
 }
 
 export interface ProcessedPoolData extends PoolData {
   feesUSD: number
+  feesEstimate24h: number
+  apr: number
 }
 
 export type PoolChartEntry = {

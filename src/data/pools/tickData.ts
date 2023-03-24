@@ -44,7 +44,7 @@ interface PoolResult {
 }
 
 // Raw tick returned from GQL
-interface Tick {
+export interface Tick {
   tickIdx: string
   liquidityGross: string
   liquidityNet: string

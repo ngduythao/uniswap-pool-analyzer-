@@ -1,6 +1,6 @@
 {
-  "name": "@uniswap/interface",
-  "description": "Uniswap Interface",
+  "name": "@ngduythao/uniswap-pool-analyzer",
+  "description": "Uniswap Pool Analyzer",
   "homepage": ".",
   "private": true,
   "devDependencies": {

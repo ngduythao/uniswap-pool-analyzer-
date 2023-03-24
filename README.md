@@ -1,8 +1,6 @@
-## Uniswap Info V3
+# Uniswap Pool Analyzer
 
-An open sourced interface for Uniswap V3 analytics. 
-
-Info URL: https://info.uniswap.org/#/
+The Uniswap Liquidity Analyzer is a tool that helps you find the Uniswap pools with the highest annual returns. This tool uses historical data from the Uniswap API to calculate the annualized returns of different Uniswap pools.
 
 ## Development
 

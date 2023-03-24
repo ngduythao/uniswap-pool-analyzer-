@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom'
 import { darken } from 'polished'
 import styled from 'styled-components'
 import LogoDark from '../../assets/svg/logo_white.svg'
-import Menu from '../Menu'
 import Row, { RowFixed, RowBetween } from '../Row'
 import SearchSmall from 'components/Search'
 import NetworkDropdown from 'components/Menu/NetworkDropdown'
@@ -176,21 +175,16 @@ export default function Header() {
           <StyledNavLink id={`stake-nav-link`} to={networkPrefix(activeNewtork) + 'pools'}>
             Pools
           </StyledNavLink>
-          <StyledNavLink id={`stake-nav-link`} to={networkPrefix(activeNewtork) + 'tokens'}>
-            Tokens
-          </StyledNavLink>
         </HeaderLinks>
       </HeaderRow>
       <HeaderControls>
         <NetworkDropdown />
         <SearchSmall />
-        <Menu />
       </HeaderControls>
       <SmallContentGrouping>
         <AutoColumn gap="sm">
           <RowBetween>
             <NetworkDropdown />
-            <Menu />
           </RowBetween>
           <SearchSmall />
         </AutoColumn>

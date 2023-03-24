@@ -78,6 +78,7 @@ interface PoolFields {
   totalValueLockedToken0: string
   totalValueLockedToken1: string
   totalValueLockedUSD: string
+  feesUsd: number
 }
 
 interface PoolDataResponse {

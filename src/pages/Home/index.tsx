@@ -5,20 +5,17 @@ import { TYPE } from 'theme'
 import { ResponsiveRow, RowBetween, RowFixed } from 'components/Row'
 import LineChart from 'components/LineChart/alt'
 import useTheme from 'hooks/useTheme'
-import { useProtocolChartData, useProtocolData, useProtocolTransactions } from 'state/protocol/hooks'
+import { useProtocolChartData, useProtocolData } from 'state/protocol/hooks'
 import { DarkGreyCard } from 'components/Card'
 import { formatDollarAmount } from 'utils/numbers'
 import Percent from 'components/Percent'
 import { HideMedium, HideSmall, StyledInternalLink } from '../../theme/components'
-import TokenTable from 'components/tokens/TokenTable'
 import PoolTable from 'components/pools/PoolTable'
 import { PageWrapper, ThemedBackgroundGlobal } from 'pages/styled'
 import { unixToDate } from 'utils/date'
 import BarChart from 'components/BarChart/alt'
 import { useAllPoolData } from 'state/pools/hooks'
 import { notEmpty } from 'utils'
-import TransactionsTable from '../../components/TransactionsTable'
-import { useAllTokenData } from 'state/tokens/hooks'
 import { MonoSpace } from 'components/shared'
 import { useActiveNetworkVersion } from 'state/application/hooks'
 import { useTransformedVolumeData } from 'hooks/chart'
@@ -43,7 +40,6 @@ export default function Home() {
   const [activeNetwork] = useActiveNetworkVersion()
 
   const [protocolData] = useProtocolData()
-  const [transactions] = useProtocolTransactions()
 
   const [volumeHover, setVolumeHover] = useState<number | undefined>()
   const [liquidityHover, setLiquidityHover] = useState<number | undefined>()
@@ -106,14 +102,6 @@ export default function Home() {
 
   const weeklyVolumeData = useTransformedVolumeData(chartData, 'week')
   const monthlyVolumeData = useTransformedVolumeData(chartData, 'month')
-
-  const allTokens = useAllTokenData()
-
-  const formattedTokens = useMemo(() => {
-    return Object.values(allTokens)
-      .map((t) => t.data)
-      .filter(notEmpty)
-  }, [allTokens])
 
   const [volumeWindow, setVolumeWindow] = useState(VolumeWindow.weekly)
 
@@ -235,19 +223,10 @@ export default function Home() {
           </DarkGreyCard>
         </HideSmall>
         <RowBetween>
-          <TYPE.main>Top Tokens</TYPE.main>
-          <StyledInternalLink to="tokens">Explore</StyledInternalLink>
-        </RowBetween>
-        <TokenTable tokenDatas={formattedTokens} />
-        <RowBetween>
           <TYPE.main>Top Pools</TYPE.main>
           <StyledInternalLink to="pools">Explore</StyledInternalLink>
         </RowBetween>
         <PoolTable poolDatas={poolDatas} />
-        <RowBetween>
-          <TYPE.main>Transactions</TYPE.main>
-        </RowBetween>
-        {transactions ? <TransactionsTable transactions={transactions} color={activeNetwork.primaryColor} /> : null}
       </AutoColumn>
     </PageWrapper>
   )

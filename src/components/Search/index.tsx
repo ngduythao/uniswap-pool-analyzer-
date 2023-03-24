@@ -236,7 +236,7 @@ const Search = ({ ...rest }: React.HTMLAttributes<HTMLDivElement>) => {
             onChange={(e) => {
               setValue(e.target.value)
             }}
-            placeholder="Search pools or tokens"
+            placeholder="Search pools"
             ref={ref}
             onFocus={() => {
               setFocused(true)
@@ -258,72 +258,6 @@ const Search = ({ ...rest }: React.HTMLAttributes<HTMLDivElement>) => {
                 </OptionButton>
               </RowFixed>
             </AutoColumn>
-            <ResponsiveGrid>
-              <TYPE.main>Tokens</TYPE.main>
-              <HideSmall>
-                <TYPE.main textAlign="end" fontSize="12px">
-                  Volume 24H
-                </TYPE.main>
-              </HideSmall>
-              <HideSmall>
-                <TYPE.main textAlign="end" fontSize="12px">
-                  TVL
-                </TYPE.main>
-              </HideSmall>
-              <HideSmall>
-                <TYPE.main textAlign="end" fontSize="12px">
-                  Price
-                </TYPE.main>
-              </HideSmall>
-            </ResponsiveGrid>
-            {tokensForList
-              .filter((t) => !TOKEN_HIDE[activeNetwork.id].includes(t.address))
-              .slice(0, tokensShown)
-              .map((t, i) => {
-                return (
-                  <HoverRowLink onClick={() => handleNav(networkPrefix(activeNetwork) + 'tokens/' + t.address)} key={i}>
-                    <ResponsiveGrid>
-                      <RowFixed>
-                        <CurrencyLogo address={t.address} />
-                        <TYPE.label ml="10px">
-                          <HoverInlineText text={`${t.name} (${t.symbol})`} />{' '}
-                        </TYPE.label>
-                        <SavedIcon
-                          id="watchlist-icon"
-                          size={'16px'}
-                          style={{ marginLeft: '8px' }}
-                          fill={savedTokens.includes(t.address)}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            addSavedToken(t.address)
-                          }}
-                        />
-                      </RowFixed>
-                      <HideSmall>
-                        <TYPE.label textAlign="end">{formatDollarAmount(t.volumeUSD)}</TYPE.label>
-                      </HideSmall>
-                      <HideSmall>
-                        <TYPE.label textAlign="end">{formatDollarAmount(t.tvlUSD)}</TYPE.label>
-                      </HideSmall>
-                      <HideSmall>
-                        <TYPE.label textAlign="end">{formatDollarAmount(t.priceUSD)}</TYPE.label>
-                      </HideSmall>
-                    </ResponsiveGrid>
-                  </HoverRowLink>
-                )
-              })}
-            {tokensForList.length === 0 ? (
-              <TYPE.main>{showWatchlist ? 'Saved tokens will appear here' : 'No results'}</TYPE.main>
-            ) : null}
-            <HoverText
-              onClick={() => {
-                setTokensShown(tokensShown + 5)
-              }}
-              hide={!(tokensForList.length > 3 && tokensForList.length >= tokensShown)}
-              ref={textRef}
-            >
-              See more...
-            </HoverText>
             <Break />
             <ResponsiveGrid>
               <TYPE.main>Pools</TYPE.main>

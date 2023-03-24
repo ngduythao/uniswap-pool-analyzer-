@@ -53,6 +53,8 @@ export const POOLS_BULK = (block: number | undefined, pools: string[]) => {
       }
     }
     `
+
+  console.log('POOLS_BULK', queryString)
   return gql(queryString)
 }
 
@@ -116,7 +118,6 @@ export function usePoolDatas(
   const [t24, t48, tWeek] = useDeltaTimestamps()
   const { blocks, error: blockError } = useBlocksFromTimestamps([t24, t48, tWeek])
   const [block24, block48, blockWeek] = blocks ?? []
-
   const { loading, error, data } = useQuery<PoolDataResponse>(POOLS_BULK(undefined, poolAddresses), {
     client: dataClient,
   })

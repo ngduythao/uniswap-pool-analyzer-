@@ -7,7 +7,7 @@ import Loader, { LoadingRows } from 'components/Loader'
 import { AutoColumn } from 'components/Column'
 import { RowFixed } from 'components/Row'
 import { formatDollarAmount } from 'utils/numbers'
-import { PoolData } from 'state/pools/reducer'
+import { PoolData, ProcessedPoolData } from 'state/pools/reducer'
 import DoubleCurrencyLogo from 'components/DoubleLogo'
 import { feeTierPercent } from 'utils'
 import { Label, ClickableText } from 'components/Text'
@@ -26,7 +26,7 @@ const ResponsiveGrid = styled.div`
   grid-gap: 1em;
   align-items: center;
 
-  grid-template-columns: 20px 3.5fr repeat(3, 1fr);
+  grid-template-columns: 20px 3.5fr repeat(4, 1fr);
 
   @media screen and (max-width: 900px) {
     grid-template-columns: 20px 1.5fr repeat(2, 1fr);
@@ -60,12 +60,13 @@ const LinkWrapper = styled(Link)`
 
 const SORT_FIELD = {
   feeTier: 'feeTier',
+  feeUSD: 'feeUSD',
   volumeUSD: 'volumeUSD',
   tvlUSD: 'tvlUSD',
   volumeUSDWeek: 'volumeUSDWeek',
 }
 
-const DataRow = ({ poolData, index }: { poolData: PoolData; index: number }) => {
+const DataRow = ({ poolData, index }: { poolData: ProcessedPoolData; index: number }) => {
   const [activeNetwork] = useActiveNetworkVersion()
 
   return (
@@ -84,6 +85,9 @@ const DataRow = ({ poolData, index }: { poolData: PoolData; index: number }) => 
           </RowFixed>
         </Label>
         <Label end={1} fontWeight={400}>
+          {formatDollarAmount(poolData.feesUSD)}
+        </Label>
+        <Label end={1} fontWeight={400}>
           {formatDollarAmount(poolData.tvlUSD)}
         </Label>
         <Label end={1} fontWeight={400}>
@@ -97,7 +101,7 @@ const DataRow = ({ poolData, index }: { poolData: PoolData; index: number }) => 
   )
 }
 
-const MAX_ITEMS = 10
+const MAX_ITEMS = 50
 
 export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDatas: PoolData[]; maxItems?: number }) {
   const [currentNetwork] = useActiveNetworkVersion()
@@ -106,24 +110,26 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
   const theme = useTheme()
 
   // for sorting
-  const [sortField, setSortField] = useState(SORT_FIELD.tvlUSD)
+  const [sortField, setSortField] = useState(SORT_FIELD.feeUSD)
   const [sortDirection, setSortDirection] = useState<boolean>(true)
 
   // pagination
   const [page, setPage] = useState(1)
   const [maxPage, setMaxPage] = useState(1)
-  useEffect(() => {
-    let extraPages = 1
-    if (poolDatas.length % maxItems === 0) {
-      extraPages = 0
-    }
-    setMaxPage(Math.floor(poolDatas.length / maxItems) + extraPages)
-  }, [maxItems, poolDatas])
 
-  const sortedPools = useMemo(() => {
+  const processedPools: ProcessedPoolData[] = useMemo(() => {
     return poolDatas
       ? poolDatas
+          .map((pool) => {
+            return { ...pool, feesUSD: pool.volumeUSD * (pool.feeTier / 1000000) }
+          })
           .filter((x) => !!x && !POOL_HIDE[currentNetwork.id].includes(x.address))
+      : []
+  }, [currentNetwork.id, poolDatas])
+
+  const sortedPools = useMemo(() => {
+    return processedPools
+      ? processedPools
           .sort((a, b) => {
             if (a && b) {
               return a[sortField as keyof PoolData] > b[sortField as keyof PoolData]
@@ -135,7 +141,15 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
           })
           .slice(maxItems * (page - 1), page * maxItems)
       : []
-  }, [currentNetwork.id, maxItems, page, poolDatas, sortDirection, sortField])
+  }, [maxItems, page, processedPools, sortDirection, sortField])
+
+  useEffect(() => {
+    let extraPages = 1
+    if (processedPools.length % maxItems === 0) {
+      extraPages = 0
+    }
+    setMaxPage(Math.floor(processedPools.length / maxItems) + extraPages)
+  }, [maxItems, processedPools])
 
   const handleSort = useCallback(
     (newField: string) => {
@@ -164,6 +178,9 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
             <Label color={theme.text2}>#</Label>
             <ClickableText color={theme.text2} onClick={() => handleSort(SORT_FIELD.feeTier)}>
               Pool {arrow(SORT_FIELD.feeTier)}
+            </ClickableText>
+            <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feeUSD)}>
+              Fee 24H {arrow(SORT_FIELD.feeUSD)}
             </ClickableText>
             <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.tvlUSD)}>
               TVL {arrow(SORT_FIELD.tvlUSD)}

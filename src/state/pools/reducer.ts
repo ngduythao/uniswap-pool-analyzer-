@@ -56,6 +56,10 @@ export interface PoolData {
   tvlToken1: number
 }
 
+export interface ProcessedPoolData extends PoolData {
+  feesUSD: number
+}
+
 export type PoolChartEntry = {
   date: number
   volumeUSD: number

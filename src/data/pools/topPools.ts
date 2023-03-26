@@ -7,7 +7,7 @@ import { POOL_HIDE } from '../../constants'
 
 export const TOP_POOLS = gql`
   query topPools {
-    pools(first: 50, orderBy: totalValueLockedUSD, orderDirection: desc, subgraphError: allow) {
+    pools(first: 100, orderBy: totalValueLockedUSD, orderDirection: desc, subgraphError: allow) {
       id
     }
   }

@@ -28,7 +28,7 @@ const ResponsiveGrid = styled.div`
   grid-gap: 1em;
   align-items: center;
 
-  grid-template-columns: 20px 3.5fr repeat(6, 1fr);
+  grid-template-columns: 20px 3.5fr repeat(7, 1fr);
 
   @media screen and (max-width: 900px) {
     grid-template-columns: 20px 1.5fr repeat(2, 1fr);
@@ -65,6 +65,7 @@ const SORT_FIELD = {
   feeTier: 'feeTier',
   feesUSD: 'feesUSD',
   feesEstimate24h: 'feesEstimate24h',
+  highLow: 'highLow',
   volumeUSD: 'volumeUSD',
   tvlUSD: 'tvlUSD',
   volumeUSDWeek: 'volumeUSDWeek',
@@ -95,6 +96,9 @@ const DataRow = ({ poolData, index }: { poolData: ProcessedPoolData; index: numb
           {formatDollarAmount(poolData.feesEstimate24h)}
         </Label>
         <Label end={1} fontWeight={400}>
+          {`${poolData.highLow.toFixed(2)} %`}
+        </Label>
+        <Label end={1} fontWeight={400}>
           {formatDollarAmount(poolData.feesUSD)}
         </Label>
         <Label end={1} fontWeight={400}>
@@ -111,7 +115,7 @@ const DataRow = ({ poolData, index }: { poolData: ProcessedPoolData; index: numb
   )
 }
 
-const MAX_ITEMS = 50
+const MAX_ITEMS = 30
 const MIN_VOLUMES = 50000
 
 export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDatas: PoolData[]; maxItems?: number }) {
@@ -135,7 +139,6 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
             (pool) => !!pool && !POOL_HIDE[currentNetwork.id].includes(pool.address) && pool.volumeUSD >= MIN_VOLUMES
           )
           .map((pool) => {
-            const poolDayData7d = pool.poolDayData.slice(0, 7)
             const poolDayData14d = pool.poolDayData
             const priceVolatility24HPercentage: number =
               poolDayData14d
@@ -167,7 +170,7 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
               Number(pool.token0?.decimals || 18),
               Number(pool.token1?.decimals || 18)
             )
-            const volume24h = Number(poolDayData7d[0].volumeUSD)
+            const volume24h = Number(poolDayData14d[0].volumeUSD)
             const L = new BigNumber(pool.liquidity)
             const feesEstimate24h = P >= Pl && P <= Pu ? estimateFee(deltaL, L, volume24h, pool.feeTier) : 0
             const apr = (feesEstimate24h * 365 * 100) / depositAmountUSD
@@ -177,6 +180,7 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
               feesUSD: pool.volumeUSD * (pool.feeTier / 1000000),
               feesEstimate24h: feesEstimate24h / 500,
               apr,
+              highLow: (Pu * 100) / Pl - 100,
             }
           })
       : []
@@ -238,6 +242,9 @@ export default function PoolTable({ poolDatas, maxItems = MAX_ITEMS }: { poolDat
             </ClickableText>
             <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feesEstimate24h)}>
               (100$/24H) {arrow(SORT_FIELD.feesEstimate24h)}
+            </ClickableText>
+            <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.highLow)}>
+              High/Low {arrow(SORT_FIELD.highLow)}
             </ClickableText>
             <ClickableText color={theme.text2} end={1} onClick={() => handleSort(SORT_FIELD.feesUSD)}>
               Fee 24H {arrow(SORT_FIELD.feesUSD)}

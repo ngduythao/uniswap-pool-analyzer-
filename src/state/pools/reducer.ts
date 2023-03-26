@@ -68,6 +68,7 @@ export interface ProcessedPoolData extends PoolData {
   feesUSD: number
   feesEstimate24h: number
   apr: number
+  highLow: number
 }
 
 export type PoolChartEntry = {

@@ -45,7 +45,7 @@ function Updaters() {
       <ListUpdater />
       <UserUpdater />
       <ProtocolUpdater />
-      <TokenUpdater />
+      {/* <TokenUpdater /> */}
       <PoolUpdater />
       <ApplicationUpdater />
     </>
